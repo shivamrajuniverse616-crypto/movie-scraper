@@ -26,17 +26,23 @@ export interface ApiResponse {
 
 /**
  * Fetch streams for a movie or TV show.
- * @param imdb IMDB ID (e.g. tt1375666)
+ * @param id IMDB or TMDB ID
+ * @param idType 'imdb' or 'tmdb'
  * @param season Season number (optional, only for TV)
  * @param episode Episode number (optional, only for TV)
  */
-export async function getStreams(imdb: string, season?: string | number, episode?: string | number): Promise<StreamData | null> {
+export async function getStreams(id: string, idType: 'imdb' | 'tmdb' = 'imdb', season?: string | number, episode?: string | number): Promise<StreamData | null> {
     try {
         const type = (season && episode) ? 'tv' : 'movie';
         const params: Record<string, any> = {
-            imdb,
             type
         };
+        
+        if (idType === 'tmdb') {
+            params.tmdb = id;
+        } else {
+            params.imdb = id;
+        }
         
         if (type === 'tv') {
             params.season = season;

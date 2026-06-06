@@ -13,15 +13,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    const { imdb, s, e } = req.query;
+    const { imdb, tmdb, s, e } = req.query;
 
-    if (!imdb || typeof imdb !== 'string') {
-        res.status(400).json({ error: 'Missing or invalid imdb parameter' });
+    if (!imdb && !tmdb) {
+        res.status(400).json({ error: 'Missing imdb or tmdb parameter' });
         return;
     }
 
+    let id = '';
+    let idType: 'imdb' | 'tmdb' = 'imdb';
+
+    if (tmdb && typeof tmdb === 'string') {
+        id = tmdb;
+        idType = 'tmdb';
+    } else if (imdb && typeof imdb === 'string') {
+        id = imdb;
+        idType = 'imdb';
+    }
+
     const streams = await getStreams(
-        imdb, 
+        id,
+        idType,
         typeof s === 'string' ? s : undefined, 
         typeof e === 'string' ? e : undefined
     );
