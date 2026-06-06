@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getVaPlayerStream, getVidLinkStream } from '../src/scraper';
+import tmdbScrape from '../src/vidsrc.ts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Enable CORS
@@ -35,9 +36,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const eStr = typeof e === 'string' ? e : undefined;
 
     // Fetch from all sources concurrently
-    const [vaPlayerResult, vidLinkResult] = await Promise.allSettled([
+    const [vaPlayerResult, vidLinkResult, vidsrcResult] = await Promise.allSettled([
         getVaPlayerStream(id, idType, sStr, eStr),
-        getVidLinkStream(id, idType, sStr, eStr)
+        getVidLinkStream(id, idType, sStr, eStr),
+        (idType === 'tmdb' ? tmdbScrape(id, sStr ? 'tv' : 'movie', sStr ? parseInt(sStr) : undefined, eStr ? parseInt(eStr) : undefined) : Promise.reject("vidsrc needs tmdb"))
     ]);
 
     const streams: {name: string, url: string}[] = [];
@@ -65,6 +67,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 name: "VaPlayer (Fast)",
                 url: proxyBase + encodeURIComponent(vaPlayerResult.value.stream_urls[0]) // Taking the first M3U8
             });
+        }
+    }
+
+    // Process VidSrc (Priority 3)
+    if (vidsrcResult.status === 'fulfilled' && vidsrcResult.value && vidsrcResult.value.length > 0) {
+        for (const item of vidsrcResult.value) {
+            if (item.stream) {
+                streams.push({
+                    name: "VidSrc.net",
+                    url: proxyBase + encodeURIComponent(item.stream) // Proxy it too
+                });
+            }
         }
     }
 

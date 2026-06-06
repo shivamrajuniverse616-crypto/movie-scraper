@@ -4,8 +4,18 @@ import http from 'http';
 
 function fetchUpstream(url: string, redirects = 0): Promise<any> {
   const isVidLink = url.includes('vidlink') || url.includes('vodvidl') || url.includes('typhoontigertribe');
-  const reqReferer = isVidLink ? 'https://vidlink.pro/' : 'https://vaplayer.ru/';
-  const reqOrigin = isVidLink ? 'https://vidlink.pro' : 'https://vaplayer.ru';
+  const isVidSrc = url.includes('vidsrc') || url.includes('whisperingauroras');
+  
+  let reqReferer = 'https://vaplayer.ru/';
+  let reqOrigin = 'https://vaplayer.ru';
+  
+  if (isVidLink) {
+      reqReferer = 'https://vidlink.pro/';
+      reqOrigin = 'https://vidlink.pro';
+  } else if (isVidSrc) {
+      reqReferer = 'https://whisperingauroras.com/';
+      reqOrigin = 'https://whisperingauroras.com';
+  }
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36';
 
   return new Promise((resolve, reject) => {
