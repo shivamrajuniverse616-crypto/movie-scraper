@@ -62,9 +62,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Process VaPlayer (Priority 2)
     if (vaPlayerResult.status === 'fulfilled' && vaPlayerResult.value) {
         if (vaPlayerResult.value.stream_urls && vaPlayerResult.value.stream_urls.length > 0) {
+            const rawVaPlayerUrl = vaPlayerResult.value.stream_urls[0];
+            const proxiedVaPlayerUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(rawVaPlayerUrl)}`;
             streams.push({
                 name: "VaPlayer (Fast)",
-                url: vaPlayerResult.value.stream_urls[0] // Taking the first M3U8
+                url: proxiedVaPlayerUrl
             });
         }
     }

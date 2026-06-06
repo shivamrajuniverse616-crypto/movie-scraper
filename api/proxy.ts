@@ -2,15 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import https from 'https';
 import http from 'http';
 
-const REFERER = 'https://vidlink.pro/';
-const ORIGIN  = 'https://vidlink.pro';
-const UA      = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124';
-
 function fetchUpstream(url: string, redirects = 0): Promise<any> {
+  const isVidLink = url.includes('vidlink') || url.includes('vodvidl') || url.includes('typhoontigertribe');
+  const reqReferer = isVidLink ? 'https://vidlink.pro/' : 'https://nextgencloudfabric.com/';
+  const reqOrigin = isVidLink ? 'https://vidlink.pro' : 'https://nextgencloudfabric.com';
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124';
+
   return new Promise((resolve, reject) => {
     if (redirects > 5) return reject(new Error('too many redirects'));
     (url.startsWith('https') ? https : http).get(url, {
-      headers: { Referer: REFERER, Origin: ORIGIN, 'User-Agent': UA, Accept: '*/*' }
+      headers: { Referer: reqReferer, Origin: reqOrigin, 'User-Agent': UA, Accept: '*/*' }
     }, res => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         const loc = res.headers.location;
