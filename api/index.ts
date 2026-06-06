@@ -43,11 +43,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const streams: {name: string, url: string}[] = [];
     let captions: any[] = [];
 
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host || 'movie-scraper-gilt.vercel.app';
+    const proxyBase = `${protocol}://${host}/api/proxy?url=`;
+
     // Process VidLink (Priority 1)
     if (vidLinkResult.status === 'fulfilled' && vidLinkResult.value) {
         streams.push({
             name: "VidLink (Multi-Lang)",
-            url: vidLinkResult.value.playlist
+            url: proxyBase + encodeURIComponent(vidLinkResult.value.playlist)
         });
         if (vidLinkResult.value.captions && vidLinkResult.value.captions.length > 0) {
             captions = [...vidLinkResult.value.captions];
@@ -59,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (vaPlayerResult.value.stream_urls && vaPlayerResult.value.stream_urls.length > 0) {
             streams.push({
                 name: "VaPlayer (Fast)",
-                url: vaPlayerResult.value.stream_urls[0] // Taking the first M3U8
+                url: proxyBase + encodeURIComponent(vaPlayerResult.value.stream_urls[0]) // Taking the first M3U8
             });
         }
     }
