@@ -4,9 +4,9 @@ import http from 'http';
 
 function fetchUpstream(url: string, redirects = 0): Promise<any> {
   const isVidLink = url.includes('vidlink') || url.includes('vodvidl') || url.includes('typhoontigertribe');
-  const reqReferer = isVidLink ? 'https://vidlink.pro/' : 'https://nextgencloudfabric.com/';
-  const reqOrigin = isVidLink ? 'https://vidlink.pro' : 'https://nextgencloudfabric.com';
-  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124';
+  const reqReferer = isVidLink ? 'https://vidlink.pro/' : 'https://vaplayer.ru/';
+  const reqOrigin = isVidLink ? 'https://vidlink.pro' : 'https://vaplayer.ru';
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36';
 
   return new Promise((resolve, reject) => {
     if (redirects > 5) return reject(new Error('too many redirects'));
