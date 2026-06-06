@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getStreams } from '../src/scraper';
+import { getVaPlayerStream, getVidLinkStream } from '../src/scraper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Enable CORS
@@ -31,17 +31,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         idType = 'imdb';
     }
 
-    const streams = await getStreams(
-        id,
-        idType,
-        typeof s === 'string' ? s : undefined, 
-        typeof e === 'string' ? e : undefined
-    );
+    const sStr = typeof s === 'string' ? s : undefined;
+    const eStr = typeof e === 'string' ? e : undefined;
 
-    if (!streams) {
+    // Fetch from all sources concurrently
+    const [vaPlayerResult, vidLinkResult] = await Promise.allSettled([
+        getVaPlayerStream(id, idType, sStr, eStr),
+        getVidLinkStream(id, idType, sStr, eStr)
+    ]);
+
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host || 'movie-scraper.vercel.app';
+    const baseUrl = `${protocol}://${host}`;
+
+    const streams = [];
+    let captions: any[] = [];
+
+    // Process VidLink (Priority 1)
+    if (vidLinkResult.status === 'fulfilled' && vidLinkResult.value) {
+        const proxiedStreamUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(vidLinkResult.value.playlist)}`;
+        streams.push({
+            name: "VidLink (Multi-Lang)",
+            url: proxiedStreamUrl
+        });
+        if (vidLinkResult.value.captions && vidLinkResult.value.captions.length > 0) {
+            captions = [...vidLinkResult.value.captions];
+        }
+    }
+
+    // Process VaPlayer (Priority 2)
+    if (vaPlayerResult.status === 'fulfilled' && vaPlayerResult.value) {
+        if (vaPlayerResult.value.stream_urls && vaPlayerResult.value.stream_urls.length > 0) {
+            streams.push({
+                name: "VaPlayer (Fast)",
+                url: vaPlayerResult.value.stream_urls[0] // Taking the first M3U8
+            });
+        }
+    }
+
+    if (streams.length === 0) {
         res.status(404).json({ error: 'Not found or failed to fetch streams' });
         return;
     }
 
-    res.status(200).json(streams);
+    res.status(200).json({
+        success: true,
+        streams: streams,
+        captions: captions
+    });
 }
