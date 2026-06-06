@@ -40,19 +40,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         getVidLinkStream(id, idType, sStr, eStr)
     ]);
 
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const host = req.headers.host || 'movie-scraper.vercel.app';
-    const baseUrl = `${protocol}://${host}`;
-
-    const streams = [];
+    const streams: {name: string, url: string}[] = [];
     let captions: any[] = [];
 
     // Process VidLink (Priority 1)
     if (vidLinkResult.status === 'fulfilled' && vidLinkResult.value) {
-        const proxiedStreamUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(vidLinkResult.value.playlist)}`;
         streams.push({
             name: "VidLink (Multi-Lang)",
-            url: proxiedStreamUrl
+            url: vidLinkResult.value.playlist
         });
         if (vidLinkResult.value.captions && vidLinkResult.value.captions.length > 0) {
             captions = [...vidLinkResult.value.captions];
@@ -62,11 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Process VaPlayer (Priority 2)
     if (vaPlayerResult.status === 'fulfilled' && vaPlayerResult.value) {
         if (vaPlayerResult.value.stream_urls && vaPlayerResult.value.stream_urls.length > 0) {
-            const rawVaPlayerUrl = vaPlayerResult.value.stream_urls[0];
-            const proxiedVaPlayerUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(rawVaPlayerUrl)}`;
             streams.push({
                 name: "VaPlayer (Fast)",
-                url: proxiedVaPlayerUrl
+                url: vaPlayerResult.value.stream_urls[0] // Taking the first M3U8
             });
         }
     }
